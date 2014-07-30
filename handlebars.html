@@ -1,0 +1,208 @@
+<!--#?index-->
+<div class="left">
+<div id="results" class="small box">
+
+</div>
+</div>
+<div class="right">
+	<div class="box" id="standings"></div>
+</div>
+<!--#?end-->
+
+<!--#?compare-->
+<div class="left">
+<div id="shortStandings" class="box">
+
+</div>
+</div>
+<div class="right">
+	<div class="box" id="comparison"></div>
+</div>
+<!--#?end-->
+
+<!--#?results-->
+<div class="left">
+	<div class="box" id="shortStandings"></div>
+</div>
+<div class="right">
+	<div class="box" id="results"></div>
+</div>
+<!--#?end-->
+
+<!--#?roundSelect-->
+<p class="title">{{title}}</p>
+<p><label>Please select a different round: </label>
+<select id="round">
+	{{#each rounds}}
+	<option value="{{round}}" {{#if selected}}selected="selected"{{/if}}>Round {{round}}</option>
+{{/each}}
+</select></p>
+<div class="content"></div>
+<!--#?end-->
+
+<!--#?teamSelect-->
+<p class="title">{{title}}</p>
+<div class="half"><p>Please select first team to compare:</p>
+<select id="team1">
+	{{#each teams}}
+		<option value="{{team_id}}" {{#is team_id ../firstSelected}}selected="selected"{{/is}}>{{team}}</option>
+	{{/each}}
+</select></div>
+<div class="half"><p>Please select second team to compare: </p>
+<select id="team2">
+	{{#each teams}}
+		<option value="{{team_id}}" {{#is team_id ../secondSelected}}selected="selected"{{/is}}>{{team}}</option>
+	{{/each}}
+</select></div>
+<div class="content"></div>
+<!--#?end-->
+
+<!--#?shortStandingsTemplate-->
+<p class="title">{{title}}</p>
+<div class="content">
+<table class ="standings">
+<tr>
+  <th>Pos.</th>
+  <th>Team</th> 
+  <th>Pl.</th>
+  <th>Points</th>
+</tr>
+{{#each first}}
+<tr {{#lt position 5}}class="champions"{{else}}{{#lt position 7}}class="europa"{{/lt}}{{/lt}}>
+  <td>{{position}}</td>
+  <td>{{teamshort}}</td> 
+  <td>{{played}}</td>
+  <td>{{points}}</td>
+</tr>
+{{/each}}
+<tr><td colspan="5" class="separator">.................................</td></tr>
+{{#each last}}
+<tr {{#gt position 17}}class="relegation"{{/gt}}>
+  <td>{{position}}</td>
+  <td>{{teamshort}}</td> 
+  <td>{{played}}</td>
+  <td>{{points}}</td>
+</tr>
+{{/each}}
+</table>
+</div>
+{{#if showMore}}<div class="showMore"><a href="#">{{showMore}} &#10146;</a></div>{{/if}}
+<!--#?end-->
+
+<!--#?standingsTemplate-->
+<p class="title">{{title}}</p>
+<div class="content">
+<table class ="standings">
+<tr>
+  <th>Position</th>
+  <th>Team Name</th> 
+  <th>Played</th>
+  <th>Wins</th>
+  <th>Draws</th>
+  <th>Loses</th>
+  <th>Scored</th>
+  <th>Against</th>
+  <th>Difference</th>
+  <th>Points</th>
+</tr>
+{{#each tables}}
+<tr {{#lt position 5}}class="champions"{{else}}{{#lt position 7}}class="europa"{{else}}{{#gt position 17}}class="relegation"{{/gt}}{{/lt}}{{/lt}}>
+  <td>{{position}}</td>
+  <td>{{team}}</td> 
+  <td>{{played}}</td>
+  <td>{{won}}</td>
+  <td>{{drawn}}</td> 
+  <td>{{lost}}</td>
+  <td>{{for}}</td>
+  <td>{{against}}</td> 
+  <td>{{difference}}</td>
+  <td>{{points}}</td>
+</tr>
+{{/each}}
+</table>
+</div>
+<!--#?end-->
+
+<!--#?quickResults-->
+<p class="title">{{title}}</p>
+<div class="content">
+<ul>
+{{#each results}}
+<li><span class="date">{{trimStrings date 10}}</span>
+{{#is status "Finished"}}
+<span class="team1 {{#gt scoreHome scoreAway}}won{{/gt}}">{{homeshort}}</span>
+<span class="scoreNoLink">
+	<span {{#gt scoreHome scoreAway}}class="won"{{/gt}}>{{scoreHome}} </span> 
+	<span {{#gt scoreAway scoreHome}}class="won"{{/gt}}>{{scoreAway}}</span>
+</span>
+<span class="team2 {{#gt scoreAway scoreHome}}won{{/gt}}">{{awayshort}}</span>
+{{else}}
+<span class="team1">{{homeshort}}</span>
+<span class="score"></span>
+<span class="team2">{{awayshort}}</span>
+{{/is}}
+</li>
+{{/each}}
+</ul>
+</div>
+{{#if showMore}}<div class="showMore"><a href="#results">{{showMore}} &#10146;</a></div>{{/if}}
+<!--#?end-->
+
+<!--#?detailedResults-->
+<ul>
+{{#each results}}
+<li><span class="date">{{trimStrings date 10}}</span>
+{{#is status "Finished"}}
+<span class="team1 {{#gt scoreHome scoreAway}}won{{/gt}}">{{homeshort}}</span>
+<span class="score">
+	<span {{#gt scoreHome scoreAway}}class="won"{{/gt}}>{{scoreHome}} </span> 
+	<span {{#gt scoreAway scoreHome}}class="won"{{/gt}}>{{scoreAway}}</span>
+</span>
+<span class="team2 {{#gt scoreAway scoreHome}}won{{/gt}}">{{awayshort}}</span>
+<span class="comparison"><a href="#compare/{{home_id}}/{{away_id}}">Compare teams</a></span>
+<div class="matchEvents {{#isnt id ../../openedMatch}}hidden{{/isnt}}">
+{{#each incidents}}
+	{{#is team_id ../home_id}}
+	<span class="home">{{playershort}} <img type="image/png" alt="{{type}}" title="{{type}}" src="./img/{{type}}.png" /> {{minute}}'</span>
+	{{else}}
+	<span class="away">{{minute}}' <img type="image/png" alt="{{type}}" title="{{type}}" src="./img/{{type}}.png" /> - {{playershort}}</span>
+	{{/is}}
+{{/each}}
+</div>
+{{else}}
+<span class="team1">{{homeshort}}</span>
+<span class="score"></span>
+<span class="team2">{{awayshort}}</span>
+<span class="comparison"><a href="#compare/{{home_id}}/{{away_id}}">Compare teams</a></span>
+
+{{/is}}
+</li>
+{{/each}}
+</ul>
+<!--#?end-->
+
+<!--#?twoTeams-->
+<ul class="tripleColumn">
+{{#each sections}}
+	<li>
+		<span class="first"></span>
+		<span class="second title">{{name}}</span>
+		<span class="third"></span>
+	</li>
+	{{#each attributes}}
+		<li class="{{comparison}}">
+			<span class="first">{{first}}</span>
+			<span class="second">{{label}}</span>
+			<span class="third">{{second}}</span>
+		</li>
+	{{/each}}
+	{{#each results}}
+		<li class="{{comparison}}">
+			<span class="first"><span class="left">{{trimStrings date 10}} - Round {{round}}</span>{{scoreHome}}</span>
+			<span class="second">{{status}}</span>
+			<span class="third">{{scoreAway}}<a class="right" href="#results/{{round}}/{{id}}">Match Details</a></span>
+		</li>
+	{{/each}}
+{{/each}}
+</ul>
+<!--#?end-->
