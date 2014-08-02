@@ -31,7 +31,8 @@ var types = {
   '.js'   : 'application/javascript',
   '.png'  : 'image/png',
   '.svg'  : 'image/svg+xml',
-  '.json'  : 'text/javascript'
+  '.json'  : 'text/javascript',
+  '.hbs': 'text/x-handlebars-template'
 }
 
 // Load the web-server, file-system and file-path modules.
