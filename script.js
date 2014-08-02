@@ -25,11 +25,11 @@ var mapTemplate = function(url) {
 };
 
 var index = function() {
-	$.getJSON("./data/tables.js", function(data) {
+	$.getJSON("./data/tables.json", function(data) {
 		var $html = $.handlebarTemplates.partials.standingsTemplate({title: "Standings", tables: data});
 		$('#standings').html($html);
 	  });
-	$.getJSON("./data/results.js", function(data) {
+	$.getJSON("./data/results.json", function(data) {
 		var justResults = _.filter(data, function(match){if((match.scoreHome) || (match.scoreHome === 0)){return true;}else{return false;}});
 		var lastResult = _.last(justResults);		
 		data = _.where(data, {round:(lastResult.round)});
@@ -39,7 +39,7 @@ var index = function() {
 };
 
 var results = function(options) {
-	$.getJSON("./data/results.js", function(data) {
+	$.getJSON("./data/results.json", function(data) {
 		
 		if(options[1]) {currentRound = parseInt(options[1], 10);}
 		else {
@@ -72,7 +72,7 @@ var results = function(options) {
 			});
 		});
     });
-	$.getJSON("./data/tables.js", function(data) {
+	$.getJSON("./data/tables.json", function(data) {
 		var first = _.first(data, 6);
 		var last = _.last(data, 4);
 		var $html = $.handlebarTemplates.partials.shortStandingsTemplate({title: "Standings", first:first, last:last, showMore:"Full Standings"});
@@ -82,8 +82,8 @@ var results = function(options) {
 
 var compare = function(options) {
 	var templateData = [];
-	$.getJSON("./data/results.js", function(results) {		
-		$.getJSON("./data/tables.js", function(data) {
+	$.getJSON("./data/results.json", function(results) {
+		$.getJSON("./data/tables.json", function(data) {
 			var teams = _.sortBy(data, function(team){return team.team;});
 			if(!options[1]){options[1] = teams[0].team_id; }
 			if(!options[2]){options[2] = teams[1].team_id; }

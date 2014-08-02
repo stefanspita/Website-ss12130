@@ -16,7 +16,7 @@
 
 var prefix = '';
 var requester = 'localhost';
-var port = 443;
+var port = 3000;
 var protocol = 'https';
 var key = './server.key';
 var cert = './server.cert';
@@ -31,6 +31,7 @@ var types = {
   '.js'   : 'application/javascript',
   '.png'  : 'image/png',
   '.svg'  : 'image/svg+xml',
+  '.json'  : 'text/javascript'
 }
 
 // Load the web-server, file-system and file-path modules.
