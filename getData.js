@@ -58,13 +58,22 @@ function calculateTables(results, teams) {
     return teams;
 }
 
-function mapResults(results, incidents) {
-    console.log(results[0], incidents[0]);
+function mapResults(results, incidents, teams) {
+    _.map(results, function(match){
+        var homeTeam = _.findWhere(teams, {id:match.home_id});
+        var awayTeam = _.findWhere(teams, {id:match.away_id});
+        match.home = homeTeam.team;
+        match.homeshort = homeTeam.teamshort;
+        match.away = awayTeam.team;
+        match.awayshort = awayTeam.teamshort;
+        match.incidents = _.where(incidents, {match_id:match.id});
+    });
+    return results;
 }
 
-function close(db, tables) {
+function close(db, tables, results) {
     db.close();
-    return {tables:tables};
+    return {tables:tables, results:results};
 }
 
 module.exports = function(callback) {
@@ -81,7 +90,7 @@ module.exports = function(callback) {
         calculateTables:calculateTables
     }, "getResults", "getTeams").sync({
         mapResults:mapResults
-    }, "getResults", "getIncidents").wait().sync({
+    }, "getResults", "getIncidents", "getTeams").wait().sync({
         close:close
-    }, "db", "calculateTables").run(callback, "close");
+    }, "db", "calculateTables", "mapResults").run(callback, "close");
 };

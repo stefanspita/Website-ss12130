@@ -1,4 +1,4 @@
-var tables, results;
+var tables, matches;
 
 var mapTemplate = function(url) {
 	$('#main').fadeTo(500, 0);
@@ -29,48 +29,43 @@ var mapTemplate = function(url) {
 var index = function() {
     var $html = $.handlebarTemplates.partials.standingsTemplate({title: "Standings", tables: tables});
     $('#standings').html($html);
-	$.getJSON("./data/results.json", function(data) {
-		var justResults = _.filter(data, function(match){if((match.scoreHome) || (match.scoreHome === 0)){return true;}else{return false;}});
-		var lastResult = _.last(justResults);		
-		data = _.where(data, {round:(lastResult.round)});
-		var $html = $.handlebarTemplates.partials.quickResults({title: "Round "+(lastResult.round), results: data, showMore:"Results and Fixtures"});
-    	$('#results').html($html);
-    });
+    var justResults = _.filter(matches, function(match){if((match.scoreHome) || (match.scoreHome === 0)){return true;}else{return false;}});
+    var lastResult = _.last(justResults);
+    var data = _.where(matches, {round:(lastResult.round)});
+    var $html = $.handlebarTemplates.partials.quickResults({title: "Round "+(lastResult.round), results: data, showMore:"Results and Fixtures"});
+    $('#results').html($html);
 };
 
 var results = function(options) {
-	$.getJSON("./data/results.json", function(data) {
-		
-		if(options[1]) {currentRound = parseInt(options[1], 10);}
-		else {
-			var lastResult = _.last(_.filter(data, function(match){if((match.scoreHome) || (match.scoreHome === 0)){return true;}else{return false;}}));
-			var currentRound = lastResult.round;
-		}
-		var rounds = _.map(_.unique(_.pluck(data, "round")), function(r)
-		{
-			if(currentRound === r){return {round:r, selected:true};}
-			else{ return {round:r};}
-		});
-		var results = _.where(data, {round:currentRound});
-		var $html = $.handlebarTemplates.partials.roundSelect({title: "Premiership Results and Fixtures ", rounds:rounds});
-    	$('#results').html($html);
-		var openedMatch = 0;
-		if(options) {openedMatch = parseInt(options[2], 10);}
-		$html = $.handlebarTemplates.partials.detailedResults({results: results, openedMatch:openedMatch});
-    	$('#results .content').html($html);
-		$(".score").click(function(e) {
-			$(e.currentTarget).closest("li").find(".matchEvents").toggleClass("hidden");
-		});
-		
-		$( "#round" ).change(function() {
-			currentRound = $( "#round" ).val();
-			results = _.where(data, {round:(parseInt(currentRound, 10))});
-			$html = $.handlebarTemplates.partials.detailedResults({results: results});
-			$('#results .content').html($html);
-			$(".score").click(function(e) {
-				$(e.currentTarget).closest("li").find(".matchEvents").toggleClass("hidden");
-			});
-		});
+    if(options[1]) {currentRound = parseInt(options[1], 10);}
+    else {
+        var lastResult = _.last(_.filter(matches, function(match){if((match.scoreHome) || (match.scoreHome === 0)){return true;}else{return false;}}));
+        var currentRound = lastResult.round;
+    }
+    var rounds = _.map(_.unique(_.pluck(matches, "round")), function(r)
+    {
+        if(currentRound === r){return {round:r, selected:true};}
+        else{ return {round:r};}
+    });
+    var results = _.where(matches, {round:currentRound});
+    var $html = $.handlebarTemplates.partials.roundSelect({title: "Premiership Results and Fixtures ", rounds:rounds});
+    $('#results').html($html);
+    var openedMatch = 0;
+    if(options) {openedMatch = parseInt(options[2], 10);}
+    $html = $.handlebarTemplates.partials.detailedResults({results: results, openedMatch:openedMatch});
+    $('#results .content').html($html);
+    $(".score").click(function(e) {
+        $(e.currentTarget).closest("li").find(".matchEvents").toggleClass("hidden");
+    });
+
+    $( "#round" ).change(function() {
+        currentRound = $( "#round" ).val();
+        results = _.where(matches, {round:(parseInt(currentRound, 10))});
+        $html = $.handlebarTemplates.partials.detailedResults({results: results});
+        $('#results .content').html($html);
+        $(".score").click(function(e) {
+            $(e.currentTarget).closest("li").find(".matchEvents").toggleClass("hidden");
+        });
     });
     var first = _.first(tables, 6);
     var last = _.last(tables, 4);
@@ -80,31 +75,29 @@ var results = function(options) {
 
 var compare = function(options) {
 	var templateData = [];
-	$.getJSON("./data/results.json", function(results) {
-        var teams = _.sortBy(tables, function(team){return team.team;});
-        if(!options[1]){options[1] = teams[0].id; }
-        if(!options[2]){options[2] = teams[1].id; }
-        var $html = $.handlebarTemplates.partials.teamSelect({title: "Team Comparison", teams:teams, firstSelected:parseInt(options[1], 10), secondSelected:parseInt(options[2], 10)});
-        $('#comparison').html($html);
-        var first = _.first(tables, 6);
-        var last = _.last(tables, 4);
-        $html = $.handlebarTemplates.partials.shortStandingsTemplate({title: "Standings", first:first, last:last, showMore:"Full Standings"});
-        $('#shortStandings').html($html);
-        if(!options[1]){options[1] = teams[0].id; }
+    var teams = _.sortBy(tables, function(team){return team.team;});
+    if(!options[1]){options[1] = teams[0].id; }
+    if(!options[2]){options[2] = teams[1].id; }
+    var $html = $.handlebarTemplates.partials.teamSelect({title: "Team Comparison", teams:teams, firstSelected:parseInt(options[1], 10), secondSelected:parseInt(options[2], 10)});
+    $('#comparison').html($html);
+    var first = _.first(tables, 6);
+    var last = _.last(tables, 4);
+    $html = $.handlebarTemplates.partials.shortStandingsTemplate({title: "Standings", first:first, last:last, showMore:"Full Standings"});
+    $('#shortStandings').html($html);
+    if(!options[1]){options[1] = teams[0].id; }
 
-        templateData.push(getSeasonComparisonData(parseInt(options[1], 10), parseInt(options[2], 10), tables));
-        templateData.push(getResultsComparisonData(parseInt(options[1], 10), parseInt(options[2], 10), results));
-        templateData.push(getVersusMatches(parseInt(options[1], 10), parseInt(options[2], 10), results));
+    templateData.push(getSeasonComparisonData(parseInt(options[1], 10), parseInt(options[2], 10), tables));
+    templateData.push(getResultsComparisonData(parseInt(options[1], 10), parseInt(options[2], 10), matches));
+    templateData.push(getVersusMatches(parseInt(options[1], 10), parseInt(options[2], 10), matches));
 
-        $html = $.handlebarTemplates.partials.twoTeams({sections:templateData});
-        $('#comparison .content').html($html);
+    $html = $.handlebarTemplates.partials.twoTeams({sections:templateData});
+    $('#comparison .content').html($html);
 
-        $( "select" ).change(function() {
-            var team1 = $( "select#team1" ).val();
-            var team2 = $( "select#team2" ).val();
-            window.location.hash = "#compare/" + team1 + "/" + team2;
-        });
-	});
+    $( "select" ).change(function() {
+        var team1 = $( "select#team1" ).val();
+        var team2 = $( "select#team2" ).val();
+        window.location.hash = "#compare/" + team1 + "/" + team2;
+    });
 };
 
 var getVersusMatches = function(team1_id, team2_id, results) {
@@ -221,6 +214,7 @@ $(document).ready(function() {
             alert("Error: " + err);
         } else if (result) {
             tables = result.tables;
+            matches = result.results;
             $(document).autoBars(function() {
               mapTemplate(window.location.href);
             });
