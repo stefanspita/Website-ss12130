@@ -12,9 +12,9 @@
     },
     "dependencies": {
         "sqlite3": "~2.2.4",
-        "raphael":"2.1.0",
-        "underscore":"1.6.0",
-        "jquery":"2.1.1",
-        "fluent-async":"0.7.0"
+        "raphael":"~2.1.0",
+        "underscore":"~1.6.0",
+        "jquery":"~2.1.1",
+        "fluent-async":"~0.7.0"
     }
 }

@@ -39,6 +39,7 @@ var types = {
 var web = require(protocol);
 var fs = require('fs');
 var path = require('path');
+var getDataFunction = require("./getData");
 
 // Response codes: see http://en.wikipedia.org/wiki/List_of_HTTP_status_codes
 var OK = 200, Redirect = 307, NotFound = 404, BadType = 415, Error = 500;
@@ -73,11 +74,30 @@ if (protocol == 'https') {
 else if (protocol == 'http') server = web.createServer(serve);
 server.listen(port, requester);
 
+// get data route handler
+function getData(request, response) {
+    getDataFunction(function(err, data) {
+        if(err){
+            console.log("ERROR: ", err);
+            response.writeHead(Error);
+            response.end();
+        }
+        else {
+            var typeHeader = { 'Content-Type': 'text/javascript' };
+            response.writeHead(OK, typeHeader);
+            response.write(JSON.stringify(data));
+            response.end();
+        }
+    });
+
+}
+
 // Serve a single request.  Redirect / to add the prefix, but otherwise
 // insist that every URL should start with the prefix.  With the exception of
 // "/", a folder URL does not have a default index page added.
 function serve(request, response) {
     var file = request.url;
+    if(file === "/getData") return getData(request, response);
     if (file == '/' && prefix != '') return redirect(response, prefix + "/");
     if (! starts(file,prefix)) return fail(response, NotFound);
     file = file.substring(prefix.length);

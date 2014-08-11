@@ -13,7 +13,7 @@ else if(process.argv[2] === "teams") {
     teams(done);
 }
 else {
-    fluent.create({}).async({results:results}).wait().async({teams:teams}).wait().async({incidents:incidents}).run(done)
+    fluent.create({}).async({results:results}).wait().async({teams:teams}).wait().async({incidents:incidents}).run(done);
 }
 
 function results(callback) {

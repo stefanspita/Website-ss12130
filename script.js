@@ -25,7 +25,16 @@ var mapTemplate = function(url) {
 };
 
 var index = function() {
-	$.getJSON("./data/tables.json", function(data) {
+    ajaxRequest("getData", null, null, function(err, result) {
+        if (err) {
+            console.log("err:", err);
+        } else if (result) {
+            console.log("result", result);
+        }
+    });
+
+
+    $.getJSON("./data/tables.json", function(data) {
 		var $html = $.handlebarTemplates.partials.standingsTemplate({title: "Standings", tables: data});
 		$('#standings').html($html);
 	  });
@@ -225,3 +234,32 @@ $(document).ready(function() {
 	});
 });
 
+var ajaxRequest = function(url, data, method, cb) {
+    var path = "https://localhost:3000/";
+    var req;
+    req = {
+        dataType: "json",
+        url: "" + path + url,
+        success: function(result) {
+            var err;
+            err = result ? null : "No Data";
+            return cb(err, result);
+        },
+        error: function(error) {
+            return cb(error);
+        }
+    };
+    if (method) {
+        req.method = method;
+        req.type = method;
+    } else {
+        req.method = "GET";
+    }
+    if (data) {
+        req.data = JSON.stringify(data);
+    }
+    $.ajaxSetup({
+        async: true
+    });
+    return $.ajax(req);
+};
