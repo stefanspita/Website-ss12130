@@ -45,13 +45,13 @@
 <div class="half"><p>Please select first team to compare:</p>
 <select id="team1">
 	{{#each teams}}
-		<option value="{{team_id}}" {{#is team_id ../firstSelected}}selected="selected"{{/is}}>{{team}}</option>
+		<option value="{{id}}" {{#is id ../firstSelected}}selected="selected"{{/is}}>{{team}}</option>
 	{{/each}}
 </select></div>
 <div class="half"><p>Please select second team to compare: </p>
 <select id="team2">
 	{{#each teams}}
-		<option value="{{team_id}}" {{#is team_id ../secondSelected}}selected="selected"{{/is}}>{{team}}</option>
+		<option value="{{id}}" {{#is id ../secondSelected}}selected="selected"{{/is}}>{{team}}</option>
 	{{/each}}
 </select></div>
 <div class="content"></div>

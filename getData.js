@@ -46,13 +46,25 @@ function calculateTables(results, teams) {
         team.lost = stats.lost != null ? stats.lost : 0;
         team.points = stats.won * 3 + stats.drawn;
         team.difference = team.for - team.against;
+        team.played = team.won + team.drawn + team.lost;
     });
-
+    teams = _.sortBy(teams, function(team){
+        return ""+team.points+team.difference;
+    });
+    teams = teams.reverse();
+    _.map(teams, function(team, index){
+        team.position = index + 1;
+    });
     return teams;
 }
 
-function close(db) {
+function mapResults(results, incidents) {
+    console.log(results[0], incidents[0]);
+}
+
+function close(db, tables) {
     db.close();
+    return {tables:tables};
 }
 
 module.exports = function(callback) {
@@ -67,7 +79,9 @@ module.exports = function(callback) {
         getTeams:getTeams
     }, "db").sync({
         calculateTables:calculateTables
-    }, "getResults", "getTeams").wait().sync({
+    }, "getResults", "getTeams").sync({
+        mapResults:mapResults
+    }, "getResults", "getIncidents").wait().sync({
         close:close
-    }, "db").run(callback, "calculateTables");
-}
+    }, "db", "calculateTables").run(callback, "close");
+};

@@ -1,3 +1,5 @@
+var tables, results;
+
 var mapTemplate = function(url) {
 	$('#main').fadeTo(500, 0);
 	$('.footer').fadeTo(500, 0);
@@ -25,19 +27,8 @@ var mapTemplate = function(url) {
 };
 
 var index = function() {
-    ajaxRequest("getData", null, null, function(err, result) {
-        if (err) {
-            console.log("err:", err);
-        } else if (result) {
-            console.log("result", result);
-        }
-    });
-
-
-    $.getJSON("./data/tables.json", function(data) {
-		var $html = $.handlebarTemplates.partials.standingsTemplate({title: "Standings", tables: data});
-		$('#standings').html($html);
-	  });
+    var $html = $.handlebarTemplates.partials.standingsTemplate({title: "Standings", tables: tables});
+    $('#standings').html($html);
 	$.getJSON("./data/results.json", function(data) {
 		var justResults = _.filter(data, function(match){if((match.scoreHome) || (match.scoreHome === 0)){return true;}else{return false;}});
 		var lastResult = _.last(justResults);		
@@ -81,42 +72,38 @@ var results = function(options) {
 			});
 		});
     });
-	$.getJSON("./data/tables.json", function(data) {
-		var first = _.first(data, 6);
-		var last = _.last(data, 4);
-		var $html = $.handlebarTemplates.partials.shortStandingsTemplate({title: "Standings", first:first, last:last, showMore:"Full Standings"});
-		$('#shortStandings').html($html);
-	});
+    var first = _.first(tables, 6);
+    var last = _.last(tables, 4);
+    var $html = $.handlebarTemplates.partials.shortStandingsTemplate({title: "Standings", first:first, last:last, showMore:"Full Standings"});
+    $('#shortStandings').html($html);
 };
 
 var compare = function(options) {
 	var templateData = [];
 	$.getJSON("./data/results.json", function(results) {
-		$.getJSON("./data/tables.json", function(data) {
-			var teams = _.sortBy(data, function(team){return team.team;});
-			if(!options[1]){options[1] = teams[0].team_id; }
-			if(!options[2]){options[2] = teams[1].team_id; }
-			var $html = $.handlebarTemplates.partials.teamSelect({title: "Team Comparison", teams:teams, firstSelected:parseInt(options[1], 10), secondSelected:parseInt(options[2], 10)});
-			$('#comparison').html($html);
-			var first = _.first(data, 6);
-			var last = _.last(data, 4);
-			$html = $.handlebarTemplates.partials.shortStandingsTemplate({title: "Standings", first:first, last:last, showMore:"Full Standings"});
-			$('#shortStandings').html($html);
-			if(!options[1]){options[1] = teams[0].team_id; }
-			
-			templateData.push(getSeasonComparisonData(parseInt(options[1], 10), parseInt(options[2], 10), data));
-			templateData.push(getResultsComparisonData(parseInt(options[1], 10), parseInt(options[2], 10), results));
-			templateData.push(getVersusMatches(parseInt(options[1], 10), parseInt(options[2], 10), results));
-			
-			$html = $.handlebarTemplates.partials.twoTeams({sections:templateData});
-			$('#comparison .content').html($html);
-			
-			$( "select" ).change(function() {
-				var team1 = $( "select#team1" ).val();
-				var team2 = $( "select#team2" ).val();
-				window.location.hash = "#compare/" + team1 + "/" + team2;
-			});
-		});
+        var teams = _.sortBy(tables, function(team){return team.team;});
+        if(!options[1]){options[1] = teams[0].id; }
+        if(!options[2]){options[2] = teams[1].id; }
+        var $html = $.handlebarTemplates.partials.teamSelect({title: "Team Comparison", teams:teams, firstSelected:parseInt(options[1], 10), secondSelected:parseInt(options[2], 10)});
+        $('#comparison').html($html);
+        var first = _.first(tables, 6);
+        var last = _.last(tables, 4);
+        $html = $.handlebarTemplates.partials.shortStandingsTemplate({title: "Standings", first:first, last:last, showMore:"Full Standings"});
+        $('#shortStandings').html($html);
+        if(!options[1]){options[1] = teams[0].id; }
+
+        templateData.push(getSeasonComparisonData(parseInt(options[1], 10), parseInt(options[2], 10), tables));
+        templateData.push(getResultsComparisonData(parseInt(options[1], 10), parseInt(options[2], 10), results));
+        templateData.push(getVersusMatches(parseInt(options[1], 10), parseInt(options[2], 10), results));
+
+        $html = $.handlebarTemplates.partials.twoTeams({sections:templateData});
+        $('#comparison .content').html($html);
+
+        $( "select" ).change(function() {
+            var team1 = $( "select#team1" ).val();
+            var team2 = $( "select#team2" ).val();
+            window.location.hash = "#compare/" + team1 + "/" + team2;
+        });
 	});
 };
 
@@ -137,8 +124,8 @@ var getVersusMatches = function(team1_id, team2_id, results) {
 };
 
 var getSeasonComparisonData = function(team1_id, team2_id, tables) {
-	var team1 = _.findWhere(tables, {team_id:team1_id});
-	var team2 = _.findWhere(tables, {team_id:team2_id});
+	var team1 = _.findWhere(tables, {id:team1_id});
+	var team2 = _.findWhere(tables, {id:team2_id});
 	var subsection = {name:"General Statistics", attributes:[]};
 	subsection.attributes.push({label:"Rank", first:team1.position, second:team2.position, comparison:comparisonResult(team1, team2, "position", true)});
 	subsection.attributes.push({label:"Wins", first:team1.won, second:team2.won, comparison:comparisonResult(team1, team2, "won")});
@@ -229,9 +216,17 @@ var initializeAnimation = function() {
 $(document).ready(function() {
 	initializeAnimation();
 	window.onhashchange = function() { mapTemplate(window.location.href); };
-	$(document).autoBars(function() {
-	  mapTemplate(window.location.href);	  
-	});
+    ajaxRequest("getData", null, null, function(err, result) {
+        if (err) {
+            alert("Error: " + err);
+        } else if (result) {
+            tables = result.tables;
+            $(document).autoBars(function() {
+              mapTemplate(window.location.href);
+            });
+        }
+    });
+
 });
 
 var ajaxRequest = function(url, data, method, cb) {
