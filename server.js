@@ -18,8 +18,8 @@ var prefix = '';
 var requester = 'localhost';
 var port = 3000;
 var protocol = 'https';
-var key = './server.key';
-var cert = './server.cert';
+var key = './key.pem';
+var cert = './cert.cer';
 var checkXhtml = true;
 var checkCase = true;
 var checkSite = true;
@@ -39,6 +39,8 @@ var types = {
 var web = require(protocol);
 var fs = require('fs');
 var path = require('path');
+var passport = require('passport');
+var LocalStrategy = require('passport-local').Strategy;
 var getDataFunction = require("./getData");
 
 // Response codes: see http://en.wikipedia.org/wiki/List_of_HTTP_status_codes
@@ -68,7 +70,7 @@ function fail(response, code) {
 // Create and start a server which only listens to requests from a given host.
 var server;
 if (protocol == 'https') {
-  var options = { key: fs.readFileSync(key), cert: fs.readFileSync(cert) };
+  var options = { key: fs.readFileSync(key), cert: fs.readFileSync(cert), requestCert: false, rejectUnauthorized: false };
   server = web.createServer(options, serve);
 }
 else if (protocol == 'http') server = web.createServer(serve);
@@ -89,7 +91,37 @@ function getData(request, response) {
             response.end();
         }
     });
+}
 
+function showAdmin(request, response) {
+    var page = fs.readFileSync("./login.html");
+    response.writeHead(200, {'Content-Type': 'text/html'});
+    response.write(page);
+    response.end();
+}
+
+function checkAdmin(request, response) {
+    var body = "";
+    if(request.method === "POST"){
+        request.on('data', function (chunk) {
+            body += chunk;
+        });
+        request.on('end', function () {
+            var params = getParams(body);
+            return redirect(response, prefix + "/");
+        });
+    }
+}
+
+function getParams(body) {
+    var param, _ref, obj = {};
+
+    _ref = body.split("&");
+    for (var i = 0; i < _ref.length; i++) {
+        param = _ref[i].split("=");
+        obj[param[0]] = param[1];
+    }
+    return obj;
 }
 
 // Serve a single request.  Redirect / to add the prefix, but otherwise
@@ -97,7 +129,9 @@ function getData(request, response) {
 // "/", a folder URL does not have a default index page added.
 function serve(request, response) {
     var file = request.url;
-    if(file === "/getData") return getData(request, response);
+    if(file === "/getData" && (request.method === "GET")) return getData(request, response);
+    if(file === "/admin"&& (request.method === "GET")) return showAdmin(request, response);
+    if(file === "/admin"&& (request.method === "POST")) return checkAdmin(request, response);
     if (file == '/' && prefix != '') return redirect(response, prefix + "/");
     if (! starts(file,prefix)) return fail(response, NotFound);
     file = file.substring(prefix.length);

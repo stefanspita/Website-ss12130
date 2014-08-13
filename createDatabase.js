@@ -12,8 +12,11 @@ else if(process.argv[2] === "results") {
 else if(process.argv[2] === "teams") {
     teams(done);
 }
+else if(process.argv[2] === "user") {
+    user(done);
+}
 else {
-    fluent.create({}).async({results:results}).wait().async({teams:teams}).wait().async({incidents:incidents}).run(done);
+    fluent.create({}).async({results:results}).wait().async({teams:teams}).wait().async({incidents:incidents}).wait().async({user:user}).run(done);
 }
 
 function results(callback) {
@@ -70,6 +73,22 @@ function teams(callback) {
     }, "db").run(callback);
 }
 
+function user(callback) {
+    var db = new sql.Database("football.db");
+    console.log("creating admin user");
+    fluent.create({
+        table:"users", db:db
+    }).async({
+        checkTableExists:checkTableExists
+    }, "table", "db").async({
+        createUsersTable:createUsersTable
+    }, "checkTableExists", "db").wait().sync({
+        addAdmin: addAdmin
+    }, "db").wait().sync({
+        close:close
+    }, "db").run(callback);
+}
+
 function checkTableExists(tableName, db, callback) {
     db.all("SELECT * FROM sqlite_master WHERE name =? and type='table'", [tableName], callback);
 }
@@ -92,6 +111,13 @@ function createTeamsTable(table, db, callback) {
     if(table.length){ callback(); }
     else {
         db.run("create table teams (id integer, team text, teamshort text)", callback);
+    }
+}
+
+function createUsersTable(table, db, callback) {
+    if(table.length){ callback(); }
+    else {
+        db.run("create table users (id integer, username text, password text)", callback);
     }
 }
 
@@ -126,6 +152,10 @@ function addTeams(rows, db) {
         team = _.pick(rows[_i], ["team_id", "team", "teamshort"]);
         db.run("insert into teams values(?, ?, ?)", _.values(team));
     }
+}
+
+function addAdmin(db) {
+    db.run("insert into users values(1, 'admin', 'admin')");
 }
 
 function close(db) {
