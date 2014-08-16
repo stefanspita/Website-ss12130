@@ -39,8 +39,6 @@ var types = {
 var web = require(protocol);
 var fs = require('fs');
 var path = require('path');
-var passport = require('passport');
-var LocalStrategy = require('passport-local').Strategy;
 var getDataFunction = require("./getData");
 
 // Response codes: see http://en.wikipedia.org/wiki/List_of_HTTP_status_codes

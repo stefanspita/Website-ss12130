@@ -15,8 +15,8 @@
         "raphael":"~2.1.0",
         "underscore":"~1.6.0",
         "jquery":"~2.1.1",
-        "fluent-async":"~0.7.0",
-        "passport": "",
-        "passport-local": ""
+        "express":"~4.7.2",
+        "body-parser":"~1.5.2",
+        "fluent-async":"~0.7.0"
     }
 }

@@ -211,7 +211,8 @@ $(document).ready(function() {
 	window.onhashchange = function() { mapTemplate(window.location.href); };
     ajaxRequest("getData", null, null, function(err, result) {
         if (err) {
-            alert("Error: " + err);
+            console.log("Error: ", err);
+            alert("An error occurred. Please contact the website administrator.");
         } else if (result) {
             tables = result.tables;
             matches = result.results;

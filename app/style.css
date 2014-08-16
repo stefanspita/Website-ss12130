@@ -1,5 +1,5 @@
 body {
-	background-image: url('./img/terrain.png');
+	background-image: url('../img/terrain.png');
 	background-attachment:fixed;
 }
 #main, .footer {
