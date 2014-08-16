@@ -17,6 +17,12 @@
         "jquery":"~2.1.1",
         "express":"~4.7.2",
         "body-parser":"~1.5.2",
-        "fluent-async":"~0.7.0"
+        "fluent-async":"~0.7.0",
+        "hbs": "~2.1.0",
+        "passport": ">= 0.0.0",
+        "passport-local": ">= 0.0.0",
+        "cookie-parser": "",
+        "method-override":"",
+        "express-session":""
     }
 }
