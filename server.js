@@ -1,221 +1,103 @@
-// Run a minimal node.js web server for local development of a web site.
-// Put this program in the site folder and start it with "node server.js".
-// Then visit the site at the address printed on the console.
-
-// Configure the server to match a particular publishing location.  The prefix
-// is either the actual path where the site will be published, or a 'random'
-// prefix which makes sure that the site will work wherever it is published, or
-// the empty string.  Requester is 'localhost' or a specific host name, so that
-// requests are only accepted from one particular computer for security, or
-// undefined to go public.  The protocol and port are usually http 80 or https
-// 443, or port numbers above 1024 can be used to avoid the need for privileged
-// running.  Key and certificate files are needed for https.  The checks
-// appropriate to the publishing site should be switched on, and the set of
-// supported types should be set to those which are acceptable on the
-// publishing site.
-
-var prefix = '';
-var requester = 'localhost';
-var port = 3000;
-var protocol = 'https';
-var key = './key.pem';
-var cert = './cert.cer';
-var checkXhtml = true;
-var checkCase = true;
-var checkSite = true;
-var checkSpaces = true;
-var checkLower = true;
-var types = {
-  '.html' : 'text/html',
-  '.css'  : 'text/css',
-  '.js'   : 'application/javascript',
-  '.png'  : 'image/png',
-  '.svg'  : 'image/svg+xml',
-  '.json'  : 'text/javascript',
-  '.hbs': 'text/x-handlebars-template'
-}
-
-// Load the web-server, file-system and file-path modules.
-var web = require(protocol);
-var fs = require('fs');
-var path = require('path');
+var express = require('express');
+_ = require("underscore");
+fs = require("fs");
+var bodyParser = require('body-parser');
+var path = require("path");
+var https = require('https');
+var privateKey  = fs.readFileSync('key.pem', 'utf8');
+var certificate = fs.readFileSync('cert.cer', 'utf8');
 var getDataFunction = require("./getData");
+var hbs = require("hbs");
+var passport = require('passport');
+var LocalStrategy = require('passport-local').Strategy;
+var sql = require("sqlite3");
+var cookieParser = require('cookie-parser');
+var methodOverride = require("method-override");
+var session = require("express-session");
 
-// Response codes: see http://en.wikipedia.org/wiki/List_of_HTTP_status_codes
-var OK = 200, Redirect = 307, NotFound = 404, BadType = 415, Error = 500;
-
-// Succeed, sending back the content and its type.
-function succeed(response, type, content) {
-  var typeHeader = { 'Content-Type': type };
-  response.writeHead(OK, typeHeader);
-  response.write(content);
-  response.end();
-}
-
-// Tell the browser to try again at a different URL.
-function redirect(response, url) {
-  var locationHeader = { 'Location': url };
-  response.writeHead(Redirect, locationHeader);
-  response.end();
-}
-
-// Give a failure response with a given code.
-function fail(response, code) {
-  response.writeHead(code);
-  response.end();
-}
-
-// Create and start a server which only listens to requests from a given host.
-var server;
-if (protocol == 'https') {
-  var options = { key: fs.readFileSync(key), cert: fs.readFileSync(cert), requestCert: false, rejectUnauthorized: false };
-  server = web.createServer(options, serve);
-}
-else if (protocol == 'http') server = web.createServer(serve);
-server.listen(port, requester);
-
-// get data route handler
-function getData(request, response) {
-    getDataFunction(function(err, data) {
-        if(err){
-            console.log("ERROR: ", err);
-            response.writeHead(Error);
-            response.end();
-        }
-        else {
-            var typeHeader = { 'Content-Type': 'text/javascript' };
-            response.writeHead(OK, typeHeader);
-            response.write(JSON.stringify(data));
-            response.end();
-        }
+//set up authentication
+function findById(id, fn) {
+    var db = new sql.Database("football.db");
+    db.all("SELECT * FROM users WHERE id = ? ", [id], function(err, user){
+        db.close();
+        user = user[0];
+        if(user) return fn(null, user);
+        return fn(new Error('User ' + id + ' does not exist'));
     });
 }
 
-function showAdmin(request, response) {
-    var page = fs.readFileSync("./login.html");
-    response.writeHead(200, {'Content-Type': 'text/html'});
-    response.write(page);
-    response.end();
+function findByUsername(username, fn) {
+    var db = new sql.Database("football.db");
+    db.all("SELECT * FROM users WHERE username = ? ", [username], function(err, user){
+        db.close();
+        user = user[0];
+        if(user) fn(null, user);
+        else fn(null, null);
+    });
 }
 
-function checkAdmin(request, response) {
-    var body = "";
-    if(request.method === "POST"){
-        request.on('data', function (chunk) {
-            body += chunk;
+function ensureAuthenticated(request, response, next) {
+    if (request.isAuthenticated()) { return next(); }
+    response.redirect('/admin');
+}
+
+passport.serializeUser(function(user, done) {
+    done(null, user.id);
+});
+
+passport.deserializeUser(function(id, done) {
+    findById(id, function (err, user) {
+        done(err, user);
+    });
+});
+
+passport.use(new LocalStrategy(
+    function(username, password, done) {
+        process.nextTick(function () {
+            findByUsername(username, function(err, user) {
+                if (err) { return done(err); }
+                if (!user) { return done(null, false, { message: 'Unknown user ' + username }); }
+                if (user.password != password) { return done(null, false, { message: 'Invalid password' }); }
+                return done(null, user);
+            })
         });
-        request.on('end', function () {
-            var params = getParams(body);
-            return redirect(response, prefix + "/");
-        });
     }
-}
+));
 
-function getParams(body) {
-    var param, _ref, obj = {};
+var app = express();
+app.use(bodyParser.urlencoded({ extended:false }));
+app.use(express.static(__dirname + '/app'));
+app.use('/node_modules', express.static(path.join(__dirname, "node_modules")));
+app.set('view engine', 'hbs');
+app.use(cookieParser());
+app.use(methodOverride());
+app.use(session({ secret: 'keyboard cat', resave:false, saveUninitialized:true }));
+app.use(passport.initialize());
+app.use(passport.session());
 
-    _ref = body.split("&");
-    for (var i = 0; i < _ref.length; i++) {
-        param = _ref[i].split("=");
-        obj[param[0]] = param[1];
-    }
-    return obj;
-}
 
-// Serve a single request.  Redirect / to add the prefix, but otherwise
-// insist that every URL should start with the prefix.  With the exception of
-// "/", a folder URL does not have a default index page added.
-function serve(request, response) {
-    var file = request.url;
-    if(file === "/getData" && (request.method === "GET")) return getData(request, response);
-    if(file === "/admin"&& (request.method === "GET")) return showAdmin(request, response);
-    if(file === "/admin"&& (request.method === "POST")) return checkAdmin(request, response);
-    if (file == '/' && prefix != '') return redirect(response, prefix + "/");
-    if (! starts(file,prefix)) return fail(response, NotFound);
-    file = file.substring(prefix.length);
-    if (file == "/") file = '/index.html';
-    file = "." + file;
-    var type = findType(request, path.extname(file));
-    if (! type) return fail(response, BadType);
-    if (checkCase && ! matchCase(file)) return fail(response, NotFound);
-    if (checkSite && ! inSite(file)) return fail(response, NotFound);
-    if (checkSpaces && ! noSpaces(file)) return fail(response, NotFound);
-    if (checkLower && ! isLower(file)) return fail(response, NotFound);
-    try { fs.readFile(file, ready); }
-    catch (err) { return fail(response, Error); }
+app.get("/getData", function(request, response){
+    getDataFunction(function(err, data) {
+        if(err) throw err;
+        response.json(data);
+    });
+});
 
-    function ready(error, content) {
-        if (error) return fail(response, NotFound);
-        succeed(response, type, content);
-    }
-}
+app.get('/admin', function(request, response) {
+    response.render("login");
+});
 
-// Find the type to respond with, using content negotiation for xhtml.
-function findType(request, extension) {
-    var type = types[extension];
-    if (! type) return type;
-    if (extension != ".html") return type;
-    if (! checkXhtml) return type;
-    var accepts = request.headers['accept'].split(",");
-    if (accepts.indexOf(type) < 0) return type;
-    return 'application/xhtml+xml';
-}
+app.post('/admin', passport.authenticate('local', { failureRedirect: '/admin' }),
+    function(request, response) {
+        response.redirect('/addData');
+});
 
-// Check whether a string starts with a prefix
-function starts(s, prefix) { return s.indexOf(prefix) == 0; }
+app.get("/addData", ensureAuthenticated, function(request,response){
+    response.render("addData");
+});
 
-// Check that the case of a path matches the actual case of the files.
-// This is needed if the target publishing site is case-sensitive, and you are
-// running this server on a case-insensitive file system such as Windows or
-// (usually) OS X on a Mac.  If it gets too expensive, consider caching the
-// results.
-function matchCase(file) {
-  var parts = file.split('/');
-  var dir = '.';
-  for (var i=1; i<parts.length; i++) {
-    var names = fs.readdirSync(dir);
-    if (names.indexOf(parts[i]) < 0) return false;
-    dir = dir + '/' + parts[i];
-  }
-  return true;
-}
 
-// Check that a file is inside the site.
-var site = fs.realpathSync('.') + path.sep;
-function inSite(file) {
-  var real;
-  try { real = fs.realpathSync(file); }
-  catch (err) { return false; }
-  return starts(real, site);
-}
-
-// Check that a name contains no spaces.
-function noSpaces(name) {
-  return (name.indexOf(' ') < 0);
-}
-
-// Check that a name is lower case.  This is not essential, it is just a
-// convention to avoid confusion among non-experts.
-function isLower(name) {
-  return (name == name.toLowerCase());
-}
-
-// Do a quick test of the URL check functions.
-function test() {
-  if (! inSite('./index.html')) console.log('inSite failure 1');
-  if (inSite('./../site')) console.log('inSite failure 2');
-  if (! matchCase('./index.html')) console.log('matchCase failure');
-  if (matchCase('./Index.html')) console.log('matchCase failure');
-  if (! noSpaces('./index.html')) console.log('noSpaces failure');
-  if (noSpaces('./my index.html')) console.log('noSpaces failure');
-  if (! isLower('.index.html')) console.log('isLower failure');
-  if (isLower('./Index.html')) console.log('isLower failure');
-}
-
-// Do testing, and print out the server address.
-test();
-var suffix;
-if (protocol == 'http' && port == '80') suffix = '';
-else if (protocol == 'https' && port == '443') suffix = '';
-else suffix = ':' + port;
-console.log('Server running at ' + protocol + '://localhost' + suffix + '/');
+var credentials = {key: privateKey, cert: certificate};
+var httpsServer = https.createServer(credentials, app);
+console.log("App listening on https://localhost:3000/");
+httpsServer.listen(3000);
