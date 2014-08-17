@@ -9,9 +9,39 @@
 </head>
 <body>
 <div class="body">
-    <div class="header" id="header">
+    <div class="header" id="header"><h1>Premiership Data Update</h1></div>
+    <div class="content">
+        <div class="left">
+            <div class="small box">
+                <p>Logged in as {{user.username}}</p>
+                <form method="get" action="/logout">
+                    <input type="submit" value="Logout">
+                </form>
+            </div>
+        </div>
+        <div class="right">
+            <div class="box" id="results">
+                <form method="post" action="/addData">
+                    <input type="submit" value="Save">
+                    <ul>
+                        {{#each matches}}
+                            <li>
+                                <input type="hidden" name="id" value="{{id}}" />
+                                <span class="date">{{date}}</span>
+                                <span class="round">Round {{round}}</span>
+                                <span class="team1">{{homeshort}}</span>
+                                <span class="scoreEdit">
+                                    <input type="text" name="scoreHome" />
+                                    <input type="text" name="scoreAway" />
+                                </span>
+                                <span class="team2">{{awayshort}}</span>
+                            </li>
+                        {{/each}}
+                    </ul>
+                </form>
+            </div>
+        </div>
     </div>
-    <div id="main" class="content"></div>
 </div>
 
 </body>

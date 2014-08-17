@@ -92,8 +92,33 @@ app.post('/admin', passport.authenticate('local', { failureRedirect: '/admin' })
         response.redirect('/addData');
 });
 
+app.get('/logout', function(request, response){
+    request.logout();
+    response.redirect('/');
+});
+
 app.get("/addData", ensureAuthenticated, function(request,response){
-    response.render("addData");
+    getDataFunction(function(err, data) {
+        var matches = _.where(data.results, {status:"Not started"});
+        matches = _.sortBy(matches, function(match){
+            return match.date;
+        });
+        if(err) throw err;
+        else response.render("addData", { user: request.user, matches:matches });
+    });
+
+});
+
+app.post("/addData", ensureAuthenticated, function(request,response){
+    var data = request.body;
+    var db = new sql.Database("football.db");
+    for (var i = 0; i < data.id.length; i++) {
+        if(data.scoreHome[i] && data.scoreAway[i]){
+            db.run("UPDATE results SET scoreHome = ?, scoreAway = ?, status = 'Finished' WHERE id = ?", [ parseInt(data.scoreHome[i]), parseInt(data.scoreAway[i]), parseInt(data.id[i]) ]);
+        }
+    }
+    db.close();
+    response.redirect("/addData");
 });
 
 

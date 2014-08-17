@@ -14,6 +14,12 @@ div.body {
 	max-width: 1200px;
 }
 
+h1 {
+    font-size: 60px;
+    color:#503C22;
+    text-align: center;
+}
+
 div.footer {
 	height: 100px;
 	width: 100%;
@@ -130,6 +136,9 @@ ul li {
 	width: 10%;
 	text-decoration: underline;
 	cursor: pointer;
+}
+#results span.scoreEdit input{
+    width:20px;
 }
 #results.small span.scoreNoLink{
 	text-align:center;
