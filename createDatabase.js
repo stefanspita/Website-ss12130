@@ -3,6 +3,9 @@ var fluent = require("fluent-async");
 var _ = require("underscore");
 var sql = require("sqlite3");
 
+// this file can be run with an extra argument, if the user only wants to add one of the tables to the database
+// the parameters available are: incidents, results, teams or users
+// if no extra parameter passed in, all tables will be added to the database
 if(process.argv[2] === "incidents") {
     incidents(done);
 }
@@ -12,13 +15,14 @@ else if(process.argv[2] === "results") {
 else if(process.argv[2] === "teams") {
     teams(done);
 }
-else if(process.argv[2] === "user") {
+else if(process.argv[2] === "users") {
     user(done);
 }
 else {
     fluent.create({}).async({results:results}).wait().async({teams:teams}).wait().async({incidents:incidents}).wait().async({user:user}).run(done);
 }
 
+// results table population flow
 function results(callback) {
     var db = new sql.Database("football.db");
     console.log("populating the results table");
@@ -37,6 +41,7 @@ function results(callback) {
     }, "db").run(callback);
 }
 
+// incidents table population flow
 function incidents(callback) {
     var db = new sql.Database("football.db");
     console.log("populating the incidents table");
@@ -55,6 +60,7 @@ function incidents(callback) {
     }, "db").run(callback);
 }
 
+// teams table population flow
 function teams(callback) {
     var db = new sql.Database("football.db");
     console.log("populating the teams table");
@@ -73,6 +79,7 @@ function teams(callback) {
     }, "db").run(callback);
 }
 
+// teams user population flow
 function user(callback) {
     var db = new sql.Database("football.db");
     console.log("creating admin user");
@@ -89,10 +96,12 @@ function user(callback) {
     }, "db").run(callback);
 }
 
+// check if the inputted table name exists in the database
 function checkTableExists(tableName, db, callback) {
     db.all("SELECT * FROM sqlite_master WHERE name =? and type='table'", [tableName], callback);
 }
 
+// next 4 functions create the relevant tables if they don't exist, or run the callback to continue to the next function, if they do
 function createResultsTable(table, db, callback) {
     if(table.length){ callback(); }
     else {
@@ -121,11 +130,14 @@ function createUsersTable(table, db, callback) {
     }
 }
 
+// get data stored in the json file having the inputted name and being a part of the local /data folder
 function getJsonData(fileName) {
     var fileJSON = fs.readFileSync('./data/'+fileName+'.json');
     return JSON.parse(fileJSON);
 }
 
+// next 4 functions add sample data to the relevant tables. running this script twice in a row will add the same data twice,
+// so please delete the .db file if you want to revert the database to its initial state
 function addResults(rows, db) {
     var match, _i, _len;
     for (_i = 0, _len = rows.length; _i < _len; _i++) {
@@ -158,10 +170,12 @@ function addAdmin(db) {
     db.run("insert into users values(1, 'admin', 'admin')");
 }
 
+// close database connection
 function close(db) {
     db.close();
 }
 
+// if an error occurred, it shows it in the terminal where the script is being run
 function done(callback) {
     if(callback) { console.log("Error: ", callback); }
 }

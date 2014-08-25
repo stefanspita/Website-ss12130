@@ -15,7 +15,7 @@ var cookieParser = require('cookie-parser');
 var methodOverride = require("method-override");
 var session = require("express-session");
 
-//set up authentication
+// function used by passport to find user in the database by a given id
 function findById(id, fn) {
     var db = new sql.Database("football.db");
     db.all("SELECT * FROM users WHERE id = ? ", [id], function(err, user){
@@ -26,6 +26,7 @@ function findById(id, fn) {
     });
 }
 
+// function used by passport to find user in the database by a given username
 function findByUsername(username, fn) {
     var db = new sql.Database("football.db");
     db.all("SELECT * FROM users WHERE username = ? ", [username], function(err, user){
@@ -41,6 +42,7 @@ function ensureAuthenticated(request, response, next) {
     response.redirect('/admin');
 }
 
+// setup authentication
 passport.serializeUser(function(user, done) {
     done(null, user.id);
 });
@@ -64,6 +66,7 @@ passport.use(new LocalStrategy(
     }
 ));
 
+// express server settings
 var app = express();
 app.use(bodyParser.urlencoded({ extended:false }));
 app.use(express.static(__dirname + '/app'));
@@ -75,7 +78,7 @@ app.use(session({ secret: 'keyboard cat', resave:false, saveUninitialized:true }
 app.use(passport.initialize());
 app.use(passport.session());
 
-
+// initial data GET route
 app.get("/getData", function(request, response){
     getDataFunction(function(err, data) {
         if(err) throw err;
@@ -83,20 +86,24 @@ app.get("/getData", function(request, response){
     });
 });
 
+// admin login page GET route
 app.get('/admin', function(request, response) {
     response.render("login");
 });
 
+// admin login page POST route
 app.post('/admin', passport.authenticate('local', { failureRedirect: '/admin' }),
     function(request, response) {
         response.redirect('/addData');
 });
 
+// admin logout route
 app.get('/logout', function(request, response){
     request.logout();
     response.redirect('/');
 });
 
+// admin data handling GET route
 app.get("/addData", ensureAuthenticated, function(request,response){
     getDataFunction(function(err, data) {
         var matches = _.where(data.results, {status:"Not started"});
@@ -109,6 +116,7 @@ app.get("/addData", ensureAuthenticated, function(request,response){
 
 });
 
+// admin data POST route
 app.post("/addData", ensureAuthenticated, function(request,response){
     var data = request.body;
     var db = new sql.Database("football.db");
@@ -121,7 +129,7 @@ app.post("/addData", ensureAuthenticated, function(request,response){
     response.redirect("/addData");
 });
 
-
+// run server
 var credentials = {key: privateKey, cert: certificate};
 var httpsServer = https.createServer(credentials, app);
 console.log("App listening on https://localhost:3000/");

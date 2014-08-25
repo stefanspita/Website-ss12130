@@ -14,6 +14,8 @@ function getTeams(db, callback){
     db.all("SELECT * FROM teams", callback);
 }
 
+// build the standings array by reducing the results for each team to a single set of attributes
+// (points, matches played, victories, draws, loses, goals scored, goals conceded, difference)
 function calculateTables(results, teams) {
     _.map(teams, function(team){
         var stats = _.countBy(results, function(match) {
@@ -58,6 +60,7 @@ function calculateTables(results, teams) {
     return teams;
 }
 
+// merges the results table with the incidents table using the match_id foreign key stored with every incident
 function mapResults(results, incidents, teams) {
     _.map(results, function(match){
         var homeTeam = _.findWhere(teams, {id:match.home_id});
@@ -71,6 +74,7 @@ function mapResults(results, incidents, teams) {
     return results;
 }
 
+// close database connection
 function close(db, tables, results) {
     db.close();
     return {tables:tables, results:results};
